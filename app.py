@@ -11,7 +11,7 @@ from pyvis import network as net
 from IPython.core.display import HTML
 from IPython.display import display
 import itertools
-import json 
+import json
 from sklearn.metrics.cluster import normalized_mutual_info_score
 
 
@@ -74,10 +74,9 @@ def get():
     nx.set_node_attributes(G, d, 'degree')
     # Updating dict
     d.update((x, scale*y) for x, y in d.items())
-   
+
     # Setting up size attribute to filter on size
     nx.set_node_attributes(G, d, 'size')
-
 
     betweenness_centrality = nx.betweenness_centrality(G, None, False, None)
     closeness_centrality = nx.closeness_centrality(G)
@@ -111,13 +110,13 @@ def get():
     for node, cluster in communities.items():
         clustering[node] = cluster
 
-
     ground_truth = {}
     for node in G.nodes(data=True):
         ground_truth[node[0]] = node[1]["club"]
 
     # Calculate the NMI score between the two clusterings
-    nmi_score = normalized_mutual_info_score(list(ground_truth.values()), list(clustering.values()))
+    nmi_score = normalized_mutual_info_score(
+        list(ground_truth.values()), list(clustering.values()))
     nodesHTML = []
     i = 0
     for node in G.nodes(data=True):
@@ -131,4 +130,4 @@ def get():
     g4.show_buttons(filter_=['physics'])
     g4.write_html('karate.html', False, False)
 
-    return render_template('evaluations.html', min_cond=min_cond, min_comm=min_comm, mod=mod , nmi_score=nmi_score ,nodes=nodesHTML)
+    return render_template('evaluations.html', number=number, min_cond=min_cond, min_comm=min_comm, mod=mod, nmi_score=nmi_score, nodes=nodesHTML)
