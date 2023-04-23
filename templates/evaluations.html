@@ -3,8 +3,35 @@
 
 <head>
     <style>
+        html,
+        body {
+            height: 100%;
+        }
+
+        div {
+            place-content: center;
+        }
+
+        html {
+            margin: auto;
+        }
+
+        body {
+            vertical-align: middle;
+        }
+
         h2 {
             margin: 5px;
+        }
+
+        table {
+            text-align: center;
+            width: 100%;
+        }
+
+        td {
+            margin: 2px;
+            border: black solid 1px;
         }
     </style>
 </head>
@@ -26,7 +53,36 @@
         <h2>nmi_score</h2>
         <h2>{{nmi_score}}</h2>
     </div>
+    <table>
+        <thead>
+            <td>id</td>
+            <td>club</td>
+            <td>size</td>
+            <td>degree</td>
+            <td>betweenness_centrality</td>
+            <td>closeness_centrality</td>
+            <td>eigenvector_centrality</td>
+            <td>community</td>
+            <td>pagerank</td>
+        </thead>
+        <tbody>
+            {% for item in nodes %}
+            <tr>
+                <td>{{item[0]}}</td>
+                <td>{{item[1]['club']}}</td>
+                <td>{{item[1]['size']}}</td>
+                <td>{{item[1]['degree']}}</td>
+                <td>{{item[1]['betweenness_centrality']}}</td>
+                <td>{{item[1]['closeness_centrality']}}</td>
+                <td>{{item[1]['eigenvector_centrality']}}</td>
+                <td>{{item[1]['community']}}</td>
+                <td>{{item[1]['pagerank']}}</td>
+            </tr>
+            {% endfor %}
 
+        </tbody>
+
+    </table>
 
 </body>
 
