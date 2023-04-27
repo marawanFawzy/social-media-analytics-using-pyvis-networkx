@@ -144,12 +144,19 @@ def get():
     i = 0
     for node in G.nodes(data=True):
         nodesHTML.append(node)
-        red = hex(int(node[1]["degree"]/max_color * 255))[2:]
+
+        bias = node[1]["degree"]/max_color * 255
+        red = hex(int(bias))[2:]
+        blue = hex(int(256-bias))[2:]
+
         if len(red) == 1:
             red = '0'+red
-        node_color = '#'+red+'cff0'
-        print(node_color)
-        graph.add_node(node[0], label=str(node[0]), size=node[1]["size"], betweenness_centrality=node[1]["betweenness_centrality"],
+        if len(blue) == 1:
+            blue = '0'+blue
+        node_color = '#'+red+'00'+blue
+        
+        graph.add_node(node[0], label=str(node[0]), size=node[1]["size"],
+                       betweenness_centrality=node[1]["betweenness_centrality"],
                        eigenvector_centrality=node[1]["eigenvector_centrality"],
                        closeness_centrality=node[1]["closeness_centrality"],
                        community=node[1]["community"], pagerank=node[1]["pagerank"], color=node_color)
