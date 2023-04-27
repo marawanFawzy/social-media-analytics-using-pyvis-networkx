@@ -25,7 +25,6 @@ def hello():
 
 @app.route('/karate')
 def get():
-    number = request.args.get('number',  type=int)
     nodes_path = request.args.get('npath')
     edges_path = request.args.get('epath')
     print(nodes_path)
@@ -33,14 +32,14 @@ def get():
     if nodes_path and edges_path:
 
         # Read nodes from the CSV file
-        with open('metadata_primaryschool_Nodes.csv', 'r', encoding='utf-8-sig') as f:
+        with open(nodes_path, 'r', encoding='utf-8-sig') as f:
             reader = csv.reader(f)
             next(reader)
             nodes = [(int(row[0]), {'Class': row[1], 'Gender': row[2]})
                      for row in reader]
 
         # Read edges from the CSV file
-        with open('primaryschool_Edges.csv', 'r') as f:
+        with open(edges_path, 'r') as f:
             reader = csv.reader(f)
             next(reader)
             edges = [(int(row[0]), int(row[1])) for row in reader]
@@ -64,10 +63,7 @@ def get():
     # Run the Girvan Newman algorithm
     comp = community.girvan_newman(G)
     # girvan_newman = community.girvan_newman(G)
-    if number:
-        k = number
-    else:
-        k = len(G.nodes)
+    k = len(G.nodes)
 
     mods = dict()
     comms = dict()
@@ -146,10 +142,24 @@ def get():
     i = 0
     for node in G.nodes(data=True):
         nodesHTML.append(node)
+        blue = (node[1]["size"]/10) % 256
+        blue = int(blue)
+        blue = hex(blue)
+        blue = blue[2:]
+        if len(blue) == 1:
+            blue = blue+'0'
+        red = (node[1]["size"]*20) % 256
+        red = int(red)
+        red = hex(red)
+        red = red[2:]
+        if len(red) == 1:
+            red = red+'0'
+        node_color = '#'+red+'00'+blue
+        print(node_color)
         graph.add_node(node[0], label=str(node[0]), size=node[1]["size"], betweenness_centrality=node[1]["betweenness_centrality"],
                        eigenvector_centrality=node[1]["eigenvector_centrality"],
                        closeness_centrality=node[1]["closeness_centrality"],
-                       community=node[1]["community"], pagerank=node[1]["pagerank"])
+                       community=node[1]["community"], pagerank=node[1]["pagerank"], color=node_color)
         i = i+1
     graph.from_nx(G)
     graph.show_buttons(filter_=['physics'])
