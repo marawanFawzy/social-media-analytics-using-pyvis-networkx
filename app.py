@@ -93,6 +93,8 @@ def get():
     scale = 5  # Scaling the size of the nodes by 10*degree
     # tp get degree for each node to dict and * by scale
     d = dict(G.degree)
+    max_color = max(d, key=d.get)
+    max_color = d[max_color]
     nx.set_node_attributes(G, d, 'degree')
     # Updating dict
     d.update((x, scale*y) for x, y in d.items())
@@ -142,19 +144,10 @@ def get():
     i = 0
     for node in G.nodes(data=True):
         nodesHTML.append(node)
-        blue = (node[1]["size"]/10) % 256
-        blue = int(blue)
-        blue = hex(blue)
-        blue = blue[2:]
-        if len(blue) == 1:
-            blue = blue+'0'
-        red = (node[1]["size"]*20) % 256
-        red = int(red)
-        red = hex(red)
-        red = red[2:]
+        red = hex(int(node[1]["degree"]/max_color * 255))[2:]
         if len(red) == 1:
-            red = red+'0'
-        node_color = '#'+red+'00'+blue
+            red = '0'+red
+        node_color = '#'+red+'cff0'
         print(node_color)
         graph.add_node(node[0], label=str(node[0]), size=node[1]["size"], betweenness_centrality=node[1]["betweenness_centrality"],
                        eigenvector_centrality=node[1]["eigenvector_centrality"],
