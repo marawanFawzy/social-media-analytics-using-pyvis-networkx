@@ -26,40 +26,66 @@ def hello():
 @app.route('/karate')
 def get():
     number = request.args.get('number',  type=int)
-    # Read nodes from the CSV file
-    with open('metadata_primaryschool_Nodes.csv', 'r', encoding='utf-8-sig') as f:
-        reader = csv.reader(f)
-        next(reader)
-        nodes = [(int(row[0]), {'Class': row[1], 'Gender': row[2]})
-                 for row in reader]
+    nodes_path = request.args.get('npath')
+    edges_path = request.args.get('epath')
+    print(nodes_path)
+    print(edges_path)
+    if nodes_path and edges_path:
 
-    # Read edges from the CSV file
-    with open('primaryschool_Edges.csv', 'r') as f:
-        reader = csv.reader(f)
-        next(reader)
-        edges = [(int(row[0]), int(row[1])) for row in reader]
+        # Read nodes from the CSV file
+        with open('metadata_primaryschool_Nodes.csv', 'r', encoding='utf-8-sig') as f:
+            reader = csv.reader(f)
+            next(reader)
+            nodes = [(int(row[0]), {'Class': row[1], 'Gender': row[2]})
+                     for row in reader]
 
-    # to get nodes and edges fom csv
-    # G = nx.Graph()
-    # G.add_nodes_from(nodes)
-    # G.add_edges_from(edges)
+        # Read edges from the CSV file
+        with open('primaryschool_Edges.csv', 'r') as f:
+            reader = csv.reader(f)
+            next(reader)
+            edges = [(int(row[0]), int(row[1])) for row in reader]
+
+        # to get nodes and edges fom csv
+        G = nx.Graph()
+        G.add_nodes_from(nodes)
+        G.add_edges_from(edges)
+        print("data read")
+    else:
+        G = nx.karate_club_graph()
 
     # create html page with size 500 * 70% with name Zachary’s Karate Club graph and menu and filter
-    g4 = net.Network(height='500px', width='70%',
-                     select_menu=True,
-                     filter_menu=True, neighborhood_highlight=True)
+    graph = net.Network(height='500px', width='70%',
+                        select_menu=True,
+                        filter_menu=True, neighborhood_highlight=True)
 
     # dataset karate_club_graph
-    G = nx.karate_club_graph()
+    print("code start")
 
     # Run the Girvan Newman algorithm
     comp = community.girvan_newman(G)
     # girvan_newman = community.girvan_newman(G)
+    if number:
+        k = number
+    else:
+        k = len(G.nodes)
 
-    k = number-1
+    mods = dict()
+    comms = dict()
+    comms_it = 1
     # number of communitis = k+1
     for communities in itertools.islice(comp, k):
         comm = tuple(sorted(c) for c in communities)
+        mods[comms_it] = community.modularity(G, comm)
+        comms[comms_it] = comm
+        comms_it += 1
+
+    print(mods)
+    print(comms)
+
+    best_partion = max(mods, key=mods.get)
+    number = best_partion
+    mod = mods[best_partion]
+    comm = comms[best_partion]
 
     i = 0
     communities = dict()
@@ -82,7 +108,7 @@ def get():
     closeness_centrality = nx.closeness_centrality(G)
     eigenvector_centrality = nx.eigenvector_centrality(G)
     pagerank = nx.pagerank(G)
-
+    page_rank_value = max(mods, key=mods.get)
     nx.set_node_attributes(G, betweenness_centrality, 'betweenness_centrality')
     nx.set_node_attributes(G, closeness_centrality, 'closeness_centrality')
     nx.set_node_attributes(G, eigenvector_centrality, 'eigenvector_centrality')
@@ -103,8 +129,6 @@ def get():
             min_cond = cond
             min_comm = c
 
-    mod = community.modularity(G, comm)
-
     # Extract the clustering to be evaluated from the Girvan-Newman output
     clustering = {}
     for node, cluster in communities.items():
@@ -118,16 +142,17 @@ def get():
     nmi_score = normalized_mutual_info_score(
         list(ground_truth.values()), list(clustering.values()))
     nodesHTML = []
+    print("graph")
     i = 0
     for node in G.nodes(data=True):
         nodesHTML.append(node)
-        g4.add_node(node[0], label=str(node[0]), size=node[1]["size"], betweenness_centrality=node[1]["betweenness_centrality"],
-                    eigenvector_centrality=node[1]["eigenvector_centrality"],
-                    closeness_centrality=node[1]["closeness_centrality"],
-                    community=node[1]["community"], pagerank=node[1]["pagerank"])
+        graph.add_node(node[0], label=str(node[0]), size=node[1]["size"], betweenness_centrality=node[1]["betweenness_centrality"],
+                       eigenvector_centrality=node[1]["eigenvector_centrality"],
+                       closeness_centrality=node[1]["closeness_centrality"],
+                       community=node[1]["community"], pagerank=node[1]["pagerank"])
         i = i+1
-    g4.from_nx(G)
-    g4.show_buttons(filter_=['physics'])
-    g4.write_html('karate.html', False, False)
+    graph.from_nx(G)
+    graph.show_buttons(filter_=['physics'])
+    graph.write_html('karate.html', False, False)
 
-    return render_template('evaluations.html', number=number, min_cond=min_cond, min_comm=min_comm, mod=mod, nmi_score=nmi_score, nodes=nodesHTML)
+    return render_template('evaluations.html', number=number, min_cond=min_cond, min_comm=min_comm, mod=mod, nmi_score=nmi_score, nodes=nodesHTML, page_rank=page_rank_value)
