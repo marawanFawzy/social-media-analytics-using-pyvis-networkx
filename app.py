@@ -23,11 +23,13 @@ def hello():
     return render_template('home.html')
 
 
-@app.route('/karate')
+@app.route('/graph')
 def get():
     nodes_path = request.args.get('npath')
     edges_path = request.args.get('epath')
+    def_graph = True
     if nodes_path and edges_path:
+        def_graph = False
         # Read nodes from the CSV file
         with open(nodes_path, 'r', encoding='utf-8-sig') as f:
             reader = csv.reader(f)
@@ -49,6 +51,13 @@ def get():
         print("data read")
     else:
         G = nx.karate_club_graph()
+        classes = {}
+        labels = {}
+        for node in G.nodes(data=True):
+            classes[node[0]] = node[1]["club"]
+            labels[node[0]] = str(node[0])
+        nx.set_node_attributes(G, classes, 'class')
+        nx.set_node_attributes(G, labels, 'label')
 
     # directed graph example
     # G = nx.gn_graph(10, kernel=lambda x: x ** 1.5)
@@ -61,15 +70,18 @@ def get():
     print("code start")
 
     # Run the Girvan Newman algorithm
-
+    # get the number of nodes and iterations
     k = len(G.nodes)
     mods = dict()
     comms = dict()
+    # start from 2 communities in the first iteration
     comms_it = 2
 
     for communities in itertools.islice(community.girvan_newman(G), k):
         comm = tuple(sorted(c) for c in communities)
+        # save the modularity
         mods[comms_it] = community.modularity(G, comm)
+        # save the community
         comms[comms_it] = comm
         comms_it += 1
 
@@ -90,6 +102,7 @@ def get():
     eigenvector_centrality = nx.eigenvector_centrality(G)
     pagerank = nx.pagerank(G)
     page_rank_value = max(pagerank, key=pagerank.get)
+    page_rank_max_value = pagerank[page_rank_value]
 
     d = dict(G.degree)
     max_color = max(d, key=d.get)
@@ -119,7 +132,6 @@ def get():
 
     ground_truth = {}
     for node in G.nodes(data=True):
-        # change this when data is changed
         ground_truth[node[0]] = node[1]["class"]
 
     # Calculate the NMI score between the two clusterings
@@ -135,7 +147,7 @@ def get():
 
         bias = node[1]["degree"]/max_color * 255
         red = hex(int(bias))[2:]
-        blue = hex(int(256-bias))[2:]
+        blue = hex(int(255-bias))[2:]
 
         if len(red) == 1:
             red = '0'+red
@@ -149,9 +161,12 @@ def get():
                        community=node[1]["community"], Class=node[1]["class"],
                        pagerank=node[1]["pagerank"], color=node_color)
         i = i+1
-
-    for edge in G.edges(data=True):
-        graph.add_edge(edge[0], edge[1])
+    if def_graph:
+        for edge in G.edges(data=True):
+            graph.add_edge(edge[0], edge[1], width=edge[2]['weight'])
+    else:
+        for edge in G.edges(data=True):
+            graph.add_edge(edge[0], edge[1])
     graph.show_buttons(filter_=['physics'])
     graph.write_html('graph.html', False, False)
-    return render_template('evaluations.html', number=number, min_cond=min_cond, min_comm=min_comm, mod=mod, nmi_score=nmi_score, nodes=nodesHTML, page_rank=page_rank_value)
+    return render_template('evaluations.html', number=number, min_cond=min_cond, min_comm=min_comm, mod=mod, nmi_score=nmi_score, nodes=nodesHTML, page_rank=page_rank_value, page_rank_max_value=page_rank_max_value)
