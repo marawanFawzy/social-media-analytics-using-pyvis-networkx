@@ -32,18 +32,18 @@ def get():
         with open(nodes_path, 'r', encoding='utf-8-sig') as f:
             reader = csv.reader(f)
             next(reader)
-            nodes = [(int(row[0]), {'club': row[1]})
+            nodes = [(row[0], {"label": row[-2], 'class': row[-1]})
                      for row in reader]
 
         # Read edges from the CSV file
         with open(edges_path, 'r') as f:
             reader = csv.reader(f)
             next(reader)
-            edges = [(int(row[0]), int(row[1]), {
-                      'Weight': row[2]}) for row in reader]
+            edges = [(row[0], row[1]) for row in reader]
 
         # to get nodes and edges fom csv
         G = nx.Graph()
+
         G.add_nodes_from(nodes)
         G.add_edges_from(edges)
         print("data read")
@@ -53,18 +53,16 @@ def get():
     # directed graph example
     # G = nx.gn_graph(10, kernel=lambda x: x ** 1.5)
     G = G.to_undirected()
-    # create html page with size 500 * 70% with name Zachary’s Karate Club graph and menu and filter
+    # create html page with size 500 * 70%, menu and filter
     graph = net.Network(height='500px', width='70%',
                         select_menu=True,
                         filter_menu=True, neighborhood_highlight=True)
 
-    # dataset karate_club_graph
     print("code start")
 
     # Run the Girvan Newman algorithm
 
     k = len(G.nodes)
-    print(G.nodes)
     mods = dict()
     comms = dict()
     comms_it = 2
@@ -75,11 +73,8 @@ def get():
         comms[comms_it] = comm
         comms_it += 1
 
-    print(mods)
-    print(comms)
-
     best_partion = max(mods, key=mods.get)
-    number = best_partion
+
     mod = mods[best_partion]
     comm = comms[best_partion]
 
@@ -89,7 +84,7 @@ def get():
         for j in c:
             communities[j] = i+1
         i = i + 1
-
+    number = i
     betweenness_centrality = nx.betweenness_centrality(G, None, False, None)
     closeness_centrality = nx.closeness_centrality(G)
     eigenvector_centrality = nx.eigenvector_centrality(G)
@@ -125,7 +120,7 @@ def get():
     ground_truth = {}
     for node in G.nodes(data=True):
         # change this when data is changed
-        ground_truth[node[0]] = node[1]["club"]
+        ground_truth[node[0]] = node[1]["class"]
 
     # Calculate the NMI score between the two clusterings
     nmi_score = normalized_mutual_info_score(
@@ -147,18 +142,16 @@ def get():
         if len(blue) == 1:
             blue = '0'+blue
         node_color = '#'+red+'00'+blue
-
-        graph.add_node(node[0], label=str(node[0]), size=node[1]["size"],
+        graph.add_node(node[0], label=node[1]["label"], size=node[1]["size"],
                        betweenness_centrality=node[1]["betweenness_centrality"],
                        eigenvector_centrality=node[1]["eigenvector_centrality"],
                        closeness_centrality=node[1]["closeness_centrality"],
-                       community=node[1]["community"], pagerank=node[1]["pagerank"], color=node_color)
+                       community=node[1]["community"], Class=node[1]["class"],
+                       pagerank=node[1]["pagerank"], color=node_color)
         i = i+1
 
     for edge in G.edges(data=True):
-        print(edge)
-        graph.add_edge(edge[0], edge[1], width=edge[2]['Weight'])
+        graph.add_edge(edge[0], edge[1])
     graph.show_buttons(filter_=['physics'])
     graph.write_html('graph.html', False, False)
-
     return render_template('evaluations.html', number=number, min_cond=min_cond, min_comm=min_comm, mod=mod, nmi_score=nmi_score, nodes=nodesHTML, page_rank=page_rank_value)
